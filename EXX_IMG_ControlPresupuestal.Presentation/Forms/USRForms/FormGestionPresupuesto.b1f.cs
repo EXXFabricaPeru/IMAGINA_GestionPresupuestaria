@@ -83,6 +83,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.cmbPresupuesto = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_11").Specific));
             this.cmbPresupuesto.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbPresupuesto_ComboSelectAfter);
             this.mtxPresupuestos = ((SAPbouiCOM.Matrix)(this.GetItem("Item_12").Specific));
+            this.mtxPresupuestos.PressedAfter += new SAPbouiCOM._IMatrixEvents_PressedAfterEventHandler(this.mtxPresupuestos_PressedAfter);
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
             this.dbsOGPR = this.UIAPIRawForm.GetDBDataSource("@EXD_OGPR");
@@ -149,7 +150,12 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private void CargarPresupuestos(string codPrespuesto, string codGerencia)
         {
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-            var sqlQry = $"CALL EXD_SP_GP_LISTAR_PRESUPUESTOS('{codPrespuesto}','{codGerencia}')";
+            var sqlQry = $"EXEC EXD_SP_GP_LISTAR_PRESUPUESTOS '{codPrespuesto}','{codGerencia}'";
+
+            if (SBOCompany.DbServerType == SAPbobsCOM.BoDataServerTypes.dst_HANADB)
+            {
+                sqlQry = $"CALL EXD_SP_GP_LISTAR_PRESUPUESTOS('{codPrespuesto}','{codGerencia}')";
+            }
 
             recSet.DoQuery(sqlQry);
             LoadMatrixFromRecordSet(recSet);
@@ -207,6 +213,12 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private void cmbPresupuesto_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
             CargarPresupuestos(cmbPresupuesto.Value, cmbGerencia.Value);
+        }
+
+        private void mtxPresupuestos_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            //Application.SBO_Application.MessageBox("Hola mundo");
+
         }
     }
 }
