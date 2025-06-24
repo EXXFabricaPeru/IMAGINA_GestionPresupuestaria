@@ -8,6 +8,7 @@ using JF_SBOAddon.Utiles.Extensions;
 using EXX_PP_ReceptorFacturasProv.Domain.Entities;
 using System.Xml.Serialization;
 using System.IO;
+using EXX_IMG_ControlPresupuestal.Domain.Entities;
 
 namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 {
@@ -83,6 +84,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.cmbPresupuesto = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_11").Specific));
             this.cmbPresupuesto.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbPresupuesto_ComboSelectAfter);
             this.mtxPresupuestos = ((SAPbouiCOM.Matrix)(this.GetItem("Item_12").Specific));
+            this.mtxPresupuestos.DoubleClickAfter += new SAPbouiCOM._IMatrixEvents_DoubleClickAfterEventHandler(this.mtxPresupuestos_DoubleClickAfter);
             this.mtxPresupuestos.PressedAfter += new SAPbouiCOM._IMatrixEvents_PressedAfterEventHandler(this.mtxPresupuestos_PressedAfter);
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
@@ -219,6 +221,29 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         {
             //Application.SBO_Application.MessageBox("Hola mundo");
 
+        }
+
+        private void mtxPresupuestos_DoubleClickAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            var codPartida = dbsGPR1.GetValue("U_COD_PRTPRSP", pVal.Row - 1);
+            var dscPartida = dbsGPR1.GetValue("U_DSC_PRTPRSP", pVal.Row - 1);
+            var codCentCos = dbsGPR1.GetValue("U_CENTRO_COSTO", pVal.Row - 1);
+
+            var partidaPresupuestal = new PartidaPresupuestal()
+            {
+                CodProyecto = dbsOGPR.GetValueExt("U_COD_PROYECTO"),
+                Etapa = dbsOGPR.GetValueExt("U_ETAPA"),
+                SubEtapa = dbsOGPR.GetValueExt("U_SUB_ETAPA"),
+                //CodSucursal = Convert.ToInt32(dbsOGPR.GetValueExt("U_COD_SUCURSAL")),
+                Gerencia = dbsOGPR.GetValueExt("U_GERENCIA"),
+                CodPresupuesto = dbsOGPR.GetValueExt("U_COD_PRESUP"),
+                Codigo = codPartida,
+                Descripcion = dscPartida,
+                CodCentroCosto = codCentCos
+            };
+
+            var formReclasPartPresup = new FormReclasificarPartidaPresup(partidaPresupuestal);
+            formReclasPartPresup.Show();
         }
     }
 }

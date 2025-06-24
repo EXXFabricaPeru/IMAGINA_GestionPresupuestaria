@@ -1,16 +1,71 @@
-﻿using SAPbouiCOM.Framework;
+﻿using EXX_IMG_ControlPresupuestal.Domain.Entities;
+using SAPbouiCOM.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using static EXX_IMG_ControlPresupuestal.Common.Utiles.Global;
+using JF_SBOAddon.Utiles.Extensions;
 
 namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 {
     [FormAttribute("FormReclasificarPartidaPresup", "Forms/USRForms/FormReclasificarPartidaPresup.b1f")]
     class FormReclasificarPartidaPresup : UserFormBase
     {
-        public FormReclasificarPartidaPresup()
+        private SAPbouiCOM.EditText EditText0;
+        private SAPbouiCOM.StaticText StaticText1;
+        private SAPbouiCOM.EditText EditText1;
+        private SAPbouiCOM.StaticText StaticText2;
+        private SAPbouiCOM.EditText EditText2;
+        private SAPbouiCOM.StaticText StaticText3;
+        private SAPbouiCOM.StaticText StaticText4;
+        private SAPbouiCOM.StaticText StaticText5;
+        private SAPbouiCOM.EditText EditText3;
+        private SAPbouiCOM.EditText EditText4;
+        private SAPbouiCOM.StaticText StaticText6;
+        private SAPbouiCOM.ComboBox ComboBox0;
+        private SAPbouiCOM.ComboBox ComboBox1;
+        private SAPbouiCOM.StaticText StaticText7;
+        private SAPbouiCOM.EditText EditText5;
+        private SAPbouiCOM.StaticText StaticText8;
+        private SAPbouiCOM.EditText EditText6;
+        private SAPbouiCOM.StaticText StaticText9;
+        private SAPbouiCOM.EditText EditText7;
+        private SAPbouiCOM.StaticText StaticText10;
+        private SAPbouiCOM.EditText EditText8;
+        private SAPbouiCOM.Button Button0;
+        private SAPbouiCOM.Button Button1;
+        private SAPbouiCOM.Matrix mtxPartidasPresup;
+        private SAPbouiCOM.StaticText StaticText11;
+        private SAPbouiCOM.EditText EditText9;
+
+        private PartidaPresupuestal _partidaPresupuestal = null;
+
+        private SAPbouiCOM.UserDataSource udsPROY = null;
+        private SAPbouiCOM.UserDataSource udsETPA = null;
+        private SAPbouiCOM.UserDataSource udsSTPA = null;
+        private SAPbouiCOM.UserDataSource udsSUCR = null;
+        private SAPbouiCOM.UserDataSource udsGRNC = null;
+        private SAPbouiCOM.UserDataSource udsCPRS = null;
+        private SAPbouiCOM.UserDataSource udsCPRT = null;
+        private SAPbouiCOM.UserDataSource udsDPRT = null;
+        private SAPbouiCOM.UserDataSource udsCNCS = null;
+
+        private SAPbouiCOM.DataTable dttPartidasPrespuestales = null;
+
+
+        public FormReclasificarPartidaPresup(PartidaPresupuestal partidaPresupuestal)
         {
+            this._partidaPresupuestal = partidaPresupuestal;
+            MostrarDescProyecto(_partidaPresupuestal.CodProyecto);
+            udsETPA.Value = _partidaPresupuestal.Etapa;
+            udsGRNC.Value = _partidaPresupuestal.Gerencia;
+            udsCPRS.Value = _partidaPresupuestal.CodPresupuesto;
+            udsCPRT.Value = _partidaPresupuestal.Codigo;
+            udsDPRT.Value = _partidaPresupuestal.Descripcion;
+            udsCNCS.Value = _partidaPresupuestal.CodCentroCosto;
+
+            CargarPartidasPresupuestales(_partidaPresupuestal.CodPresupuesto, _partidaPresupuestal.Gerencia);
         }
 
         /// <summary>
@@ -42,9 +97,22 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.EditText8 = ((SAPbouiCOM.EditText)(this.GetItem("Item_21").Specific));
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
-            this.Matrix1 = ((SAPbouiCOM.Matrix)(this.GetItem("Item_25").Specific));
+            this.mtxPartidasPresup = ((SAPbouiCOM.Matrix)(this.GetItem("Item_25").Specific));
             this.StaticText11 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_26").Specific));
             this.EditText9 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
+
+            this.udsPROY = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_PROY");
+            this.udsETPA = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_ETPA");
+            this.udsSTPA = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_STPA");
+            this.udsSUCR = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_SUCR");
+            this.udsGRNC = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_GRNC");
+            this.udsCPRS = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_CPRS");
+            this.udsCPRT = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_CPRT");
+            this.udsDPRT = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_DPRT");
+            this.udsCNCS = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_CNCS");
+
+            this.dttPartidasPrespuestales = this.UIAPIRawForm.DataSources.DataTables.Item("DT_PP");
+
             this.OnCustomInitialize();
 
         }
@@ -63,31 +131,27 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         }
 
-        private SAPbouiCOM.EditText EditText0;
-        private SAPbouiCOM.StaticText StaticText1;
-        private SAPbouiCOM.EditText EditText1;
-        private SAPbouiCOM.StaticText StaticText2;
-        private SAPbouiCOM.EditText EditText2;
-        private SAPbouiCOM.StaticText StaticText3;
-        private SAPbouiCOM.StaticText StaticText4;
-        private SAPbouiCOM.StaticText StaticText5;
-        private SAPbouiCOM.EditText EditText3;
-        private SAPbouiCOM.EditText EditText4;
-        private SAPbouiCOM.StaticText StaticText6;
-        private SAPbouiCOM.ComboBox ComboBox0;
-        private SAPbouiCOM.ComboBox ComboBox1;
-        private SAPbouiCOM.StaticText StaticText7;
-        private SAPbouiCOM.EditText EditText5;
-        private SAPbouiCOM.StaticText StaticText8;
-        private SAPbouiCOM.EditText EditText6;
-        private SAPbouiCOM.StaticText StaticText9;
-        private SAPbouiCOM.EditText EditText7;
-        private SAPbouiCOM.StaticText StaticText10;
-        private SAPbouiCOM.EditText EditText8;
-        private SAPbouiCOM.Button Button0;
-        private SAPbouiCOM.Button Button1;
-        private SAPbouiCOM.Matrix Matrix1;
-        private SAPbouiCOM.StaticText StaticText11;
-        private SAPbouiCOM.EditText EditText9;
+        private void MostrarDescProyecto(string codProyecto)
+        {
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            var sqlQry = $"select \"PrjName\" from OPRJ where \"PrjCode\" = '{codProyecto}'";
+
+            recSet.DoQuery(sqlQry);
+
+            if (!recSet.EoF) udsPROY.Value = recSet.Fields.Item(0).Value.ToString();
+        }
+
+        private void CargarPartidasPresupuestales(string codPresupuesto, string codGerencia)
+        {
+            var sqlQry = $"EXEC EXD_SP_GP_DETALLE_PARTIDA_PRESUPUESTAL '{codPresupuesto}','{codGerencia}'";
+
+            if (SBOCompany.DbServerType == SAPbobsCOM.BoDataServerTypes.dst_HANADB)
+            {
+                sqlQry = $"CALL EXD_SP_GP_DETALLE_PARTIDA_PRESUPUESTAL('{codPresupuesto}','{codGerencia}')";
+            }
+
+            dttPartidasPrespuestales.ExecuteQuery(sqlQry);
+            mtxPartidasPresup.LoadFromDataSource();
+        }
     }
 }
