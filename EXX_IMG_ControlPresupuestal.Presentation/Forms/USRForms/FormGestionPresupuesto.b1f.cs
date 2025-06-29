@@ -9,6 +9,8 @@ using EXX_PP_ReceptorFacturasProv.Domain.Entities;
 using System.Xml.Serialization;
 using System.IO;
 using EXX_IMG_ControlPresupuestal.Domain.Entities;
+using System.Xml.Linq;
+using System.Threading.Tasks;
 
 namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 {
@@ -29,11 +31,30 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private SAPbouiCOM.Matrix mtxPresupuestos;
         private SAPbouiCOM.Button Button0;
         private SAPbouiCOM.Button Button1;
+        private SAPbouiCOM.EditText EditText5;
+        private SAPbouiCOM.StaticText StaticText6;
+        private SAPbouiCOM.ComboBox cmbSeries;
+        private SAPbouiCOM.EditText EditText0;
+        private SAPbouiCOM.EditText EditText1;
+        private SAPbouiCOM.EditText edtFchCreacion;
+        private SAPbouiCOM.StaticText StaticText7;
+        private SAPbouiCOM.StaticText StaticText8;
+        private SAPbouiCOM.EditText EditText2;
+        private SAPbouiCOM.EditText EditText3;
+        private SAPbouiCOM.EditText EditText4;
+        private SAPbouiCOM.EditText EditText6;
+        private SAPbouiCOM.StaticText StaticText9;
 
         //Datasources
-
         SAPbouiCOM.DBDataSource dbsOGPR = null;
         SAPbouiCOM.DBDataSource dbsGPR1 = null;
+
+        //UserDataSources
+        SAPbouiCOM.UserDataSource udsSPATDP = null;
+
+        //Flags
+        private bool validarCambioDeMontoDisp = true;
+        private bool reclasificacionHecha = false;
 
 
         public FormGestionPresupuesto()
@@ -59,6 +80,9 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             recSet.DoQuery(sqlQry);
             cmbSucursal.LoadValidValues(recSet);
 
+            mtxPresupuestos.AutoResizeColumns();
+
+            LoadDataOnAddMode();
         }
 
         /// <summary>
@@ -84,12 +108,31 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.cmbPresupuesto = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_11").Specific));
             this.cmbPresupuesto.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbPresupuesto_ComboSelectAfter);
             this.mtxPresupuestos = ((SAPbouiCOM.Matrix)(this.GetItem("Item_12").Specific));
+            this.mtxPresupuestos.LostFocusAfter += new SAPbouiCOM._IMatrixEvents_LostFocusAfterEventHandler(this.mtxPresupuestos_LostFocusAfter);
+            this.mtxPresupuestos.ValidateAfter += new SAPbouiCOM._IMatrixEvents_ValidateAfterEventHandler(this.mtxPresupuestos_ValidateAfter);
+            this.mtxPresupuestos.ValidateBefore += new SAPbouiCOM._IMatrixEvents_ValidateBeforeEventHandler(this.mtxPresupuestos_ValidateBefore);
             this.mtxPresupuestos.DoubleClickAfter += new SAPbouiCOM._IMatrixEvents_DoubleClickAfterEventHandler(this.mtxPresupuestos_DoubleClickAfter);
             this.mtxPresupuestos.PressedAfter += new SAPbouiCOM._IMatrixEvents_PressedAfterEventHandler(this.mtxPresupuestos_PressedAfter);
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
+            this.Button0.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.Button0_PressedBefore);
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
             this.dbsOGPR = this.UIAPIRawForm.GetDBDataSource("@EXD_OGPR");
             this.dbsGPR1 = this.UIAPIRawForm.GetDBDataSource("@EXD_GPR1");
+            this.EditText5 = ((SAPbouiCOM.EditText)(this.GetItem("Item_20").Specific));
+            this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_13").Specific));
+            this.cmbSeries = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_14").Specific));
+            this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Item_15").Specific));
+            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("Item_16").Specific));
+            this.edtFchCreacion = ((SAPbouiCOM.EditText)(this.GetItem("Item_17").Specific));
+            this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_18").Specific));
+            this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_19").Specific));
+            this.EditText2 = ((SAPbouiCOM.EditText)(this.GetItem("Item_21").Specific));
+            this.EditText3 = ((SAPbouiCOM.EditText)(this.GetItem("Item_22").Specific));
+            this.EditText4 = ((SAPbouiCOM.EditText)(this.GetItem("Item_23").Specific));
+            this.EditText6 = ((SAPbouiCOM.EditText)(this.GetItem("Item_24").Specific));
+            this.StaticText9 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_25").Specific));
+            this.udsSPATDP = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_SPATDP");
+            this.EditText7 = ((SAPbouiCOM.EditText)(this.GetItem("Item_26").Specific));
             this.OnCustomInitialize();
 
         }
@@ -99,6 +142,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         /// </summary>
         public override void OnInitializeFormEvents()
         {
+            this.DataAddAfter += new DataAddAfterHandler(this.Form_DataAddAfter);
+
         }
 
         private SAPbouiCOM.StaticText StaticText0;
@@ -110,6 +155,9 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             mtxPresupuestos.Columns.Item("Col_8").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
             mtxPresupuestos.Columns.Item("Col_9").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
             mtxPresupuestos.Columns.Item("Col_10").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
+
+            mtxPresupuestos.Columns.Item("Col_11").Visible = false;
+            mtxPresupuestos.Columns.Item("Col_12").Visible = false;
         }
 
         private void cmbSubEtapa_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
@@ -130,23 +178,48 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void SeleccionarSucursalGerenciaCodPresup(string codProyecto, string codEtapa, string codSubEtapa)
         {
+
+
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
             var sqlQry = $"select U_EXC_IDEMPRE from \"@EXC_PRESGENE\" where U_EXC_CODIPROY = '{codProyecto}' and U_EXC_ETAPA = '{codEtapa}' and U_EXC_SUBETA = '{codSubEtapa}'";
 
-            recSet.DoQuery(sqlQry);
+            try
+            {
+                recSet.DoQuery(sqlQry);
 
+                sqlQry = $"select distinct T1.U_EXC_GERENCIA,T1.U_EXC_GERENCIA from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
+                    $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
 
-            sqlQry = $"select distinct T1.U_EXC_GERENCIA,T1.U_EXC_GERENCIA from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
-                $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
+                recSet.DoQuery(sqlQry);
+                cmbGerencia.LoadValidValues(recSet);
 
-            recSet.DoQuery(sqlQry);
-            cmbGerencia.LoadValidValues(recSet);
+                sqlQry = $"select distinct T1.\"Code\",T1.\"Code\" from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
+                    $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
 
-            sqlQry = $"select distinct T1.\"Code\",T1.\"Code\" from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
-                $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
+                recSet.DoQuery(sqlQry);
+                cmbPresupuesto.LoadValidValues(recSet);
 
-            recSet.DoQuery(sqlQry);
-            cmbPresupuesto.LoadValidValues(recSet);
+                sqlQry = $"select distinct U_EXC_IDEMPRE from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
+                    $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
+
+                recSet.DoQuery(sqlQry);
+                if (!recSet.EoF)
+                {
+                    dbsOGPR.SetValueExt("U_COD_SUCURSAL", recSet.Fields.Item(0).Value.ToString());
+                }
+
+                dbsOGPR.SetValueExt("U_GERENCIA", null);
+                dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+
+                dbsGPR1.Clear();
+                mtxPresupuestos.LoadFromDataSource();
+
+            }
+            catch (Exception ex)
+            {
+                Application.SBO_Application.SetStatusErrorMessage(ex.Message);
+
+            }
         }
 
         private void CargarPresupuestos(string codPrespuesto, string codGerencia)
@@ -159,8 +232,19 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                 sqlQry = $"CALL EXD_SP_GP_LISTAR_PRESUPUESTOS('{codPrespuesto}','{codGerencia}')";
             }
 
+            dbsGPR1.Clear();
+            mtxPresupuestos.LoadFromDataSource();
             recSet.DoQuery(sqlQry);
-            LoadMatrixFromRecordSet(recSet);
+            if (recSet.RecordCount > 0)
+            {
+                validarCambioDeMontoDisp = false;
+                this.UIAPIRawForm.Freeze(true);
+                LoadMatrixFromRecordSet(recSet);
+                mtxPresupuestos.Columns.Item("Col_10").Cells.Item(1).Click(SAPbouiCOM.BoCellClickType.ct_Regular);
+                cmbPresupuesto.Active = true;
+                this.UIAPIRawForm.Freeze(false);
+                validarCambioDeMontoDisp = true;
+            }
         }
 
         private void LoadMatrixFromRecordSet(SAPbobsCOM.Recordset recSet)
@@ -177,7 +261,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                     Cells = new List<CellDBS>
                     {
                         new CellDBS{ Uid = "U_CENTRO_COSTO", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CENCOSTO").InnerText ??  string.Empty},
-                        new CellDBS{ Uid = "U_GERENCIA", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CENCOSTO").InnerText ??  string.Empty},
+                        new CellDBS{ Uid = "U_GERENCIA", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_GERENCIA").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_COD_PRTPRSP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CODPARPR").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_DSC_PRTPRSP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_DESPARPR").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_CTRL_PRSP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CONTPRE").InnerText ??  string.Empty},
@@ -187,6 +271,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                         new CellDBS{ Uid = "U_TOT_COMP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_TOTCOMPR").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_TOT_EJEC", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_TOTEJECU").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_TOT_DISP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_TOTDIS").InnerText ??  string.Empty},
+                        new CellDBS{ Uid = "U_TOT_DISP_AUX", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_TOTDIS").InnerText ??  string.Empty},
                     }.ToArray()
                 };
             }).ToArray();
@@ -199,12 +284,6 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                 mtxPresupuestos.LoadFromDataSource();
                 mtxPresupuestos.AutoResizeColumns();
             }
-            mtxPresupuestos.Columns.Item("Col_6").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-            mtxPresupuestos.Columns.Item("Col_7").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-            mtxPresupuestos.Columns.Item("Col_8").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-            mtxPresupuestos.Columns.Item("Col_9").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-            mtxPresupuestos.Columns.Item("Col_10").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-
         }
 
         private void cmbGerencia_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
@@ -225,25 +304,158 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void mtxPresupuestos_DoubleClickAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            var codPartida = dbsGPR1.GetValue("U_COD_PRTPRSP", pVal.Row - 1);
-            var dscPartida = dbsGPR1.GetValue("U_DSC_PRTPRSP", pVal.Row - 1);
-            var codCentCos = dbsGPR1.GetValue("U_CENTRO_COSTO", pVal.Row - 1);
-
-            var partidaPresupuestal = new PartidaPresupuestal()
+            if(pVal.ColUID == "#" && pVal.Row >0)
             {
-                CodProyecto = dbsOGPR.GetValueExt("U_COD_PROYECTO"),
-                Etapa = dbsOGPR.GetValueExt("U_ETAPA"),
-                SubEtapa = dbsOGPR.GetValueExt("U_SUB_ETAPA"),
-                //CodSucursal = Convert.ToInt32(dbsOGPR.GetValueExt("U_COD_SUCURSAL")),
-                Gerencia = dbsOGPR.GetValueExt("U_GERENCIA"),
-                CodPresupuesto = dbsOGPR.GetValueExt("U_COD_PRESUP"),
-                Codigo = codPartida,
-                Descripcion = dscPartida,
-                CodCentroCosto = codCentCos
-            };
+                var codPartida = dbsGPR1.GetValue("U_COD_PRTPRSP", pVal.Row - 1);
+                var dscPartida = dbsGPR1.GetValue("U_DSC_PRTPRSP", pVal.Row - 1);
+                var codCentCos = dbsGPR1.GetValue("U_CENTRO_COSTO", pVal.Row - 1);
+                var totalDisponible = dbsGPR1.GetValue("U_TOT_DISP", pVal.Row - 1);
 
-            var formReclasPartPresup = new FormReclasificarPartidaPresup(partidaPresupuestal);
-            formReclasPartPresup.Show();
+                var partidaPresupuestal = new PartidaPresupuestal()
+                {
+                    CodProyecto = dbsOGPR.GetValueExt("U_COD_PROYECTO"),
+                    Etapa = dbsOGPR.GetValueExt("U_ETAPA"),
+                    SubEtapa = dbsOGPR.GetValueExt("U_SUB_ETAPA"),
+                    CodSucursal = Convert.ToInt32(dbsOGPR.GetValueExt("U_COD_SUCURSAL")),
+                    Gerencia = dbsOGPR.GetValueExt("U_GERENCIA"),
+                    CodPresupuesto = dbsOGPR.GetValueExt("U_COD_PRESUP"),
+                    Codigo = codPartida,
+                    Descripcion = dscPartida,
+                    CodCentroCosto = codCentCos,
+                    TotalDisponible = Convert.ToDouble(totalDisponible)
+                };
+
+                var formReclasPartPresup = new FormReclasificarPartidaPresup(partidaPresupuestal);
+                formReclasPartPresup.Show();
+            }
+        }
+
+        public void LoadDataOnAddMode()
+        {
+            reclasificacionHecha = false;
+            cmbSeries.ValidValues.LoadSeries(UIAPIRawForm.BusinessObject.Type, SAPbouiCOM.BoSeriesMode.sf_Add);
+            if (cmbSeries.ValidValues.Count > 0) cmbSeries.Select(0, SAPbouiCOM.BoSearchKey.psk_Index);
+            dbsOGPR.SetValue("DocNum", 0, UIAPIRawForm.BusinessObject.GetNextSerialNumber(dbsOGPR.GetValue("Series", 0).Trim(), UIAPIRawForm.BusinessObject.Type).ToString());
+            dbsOGPR.SetValueExt("CreateDate", DateTime.Today.ToString("yyyyMMdd"));
+            dbsOGPR.SetValueExt("Creator", SBOCompany.UserName);
+        }
+
+        private void mtxPresupuestos_ValidateBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            if (validarCambioDeMontoDisp)
+            {
+                //var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
+                this.UIAPIRawForm.Freeze(true);
+
+                mtxPresupuestos.FlushToDataSource();
+                var saldoDisponible = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP", pVal.Row - 1));
+                var saldoDisponibleAux = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP_AUX", pVal.Row - 1));
+
+                dbsGPR1.SetValue("U_SALDO_ASIGNAR", pVal.Row - 1, (saldoDisponibleAux - saldoDisponible).ToString());
+
+                mtxPresupuestos.LoadFromDataSourceEx();
+
+                var saldoPorAsignarTot = 0.00;
+                for (int i = 0; i < dbsGPR1.Size; i++)
+                {
+                    saldoPorAsignarTot += Convert.ToDouble(dbsGPR1.GetValue("U_SALDO_ASIGNAR", i));
+                }
+
+                this.UIAPIRawForm.Freeze(false);
+
+                if (saldoPorAsignarTot != 0) reclasificacionHecha = true;
+
+                udsSPATDP.ValueEx = saldoPorAsignarTot.ToString();
+                if (saldoPorAsignarTot < 0.00)
+                {
+                    Application.SBO_Application.SetStatusErrorMessage("No es posible realizar un incremento que excede el saldo");
+                    BubbleEvent = false;
+                }
+            }
+        }
+
+        private void mtxPresupuestos_ValidateAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            /*
+            if (validarCambioDeMontoDisp)
+            {
+                mtxPresupuestos.FlushToDataSource();
+                var saldoDisponible = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP", pVal.Row - 1));
+                var saldoDisponibleAux = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP_AUX", pVal.Row - 1));
+
+                dbsGPR1.SetValue("U_SALDO_ASIGNAR", pVal.Row - 1, (saldoDisponibleAux - saldoDisponible).ToString());
+
+                mtxPresupuestos.LoadFromDataSourceEx();
+
+                var saldoPorAsignarTot = 0.00;
+                for (int i = 0; i < dbsGPR1.Size; i++)
+                {
+                    saldoPorAsignarTot += Convert.ToDouble(dbsGPR1.GetValue("U_SALDO_ASIGNAR", i));
+                }
+
+                //if (saldoPorAsignarTot < 0) saldoPorAsignarTot = 0.00;
+
+                udsSPATDP.ValueEx = saldoPorAsignarTot.ToString();
+            }
+            */
+        }
+
+        private void mtxPresupuestos_LostFocusAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            if (validarCambioDeMontoDisp)
+            {
+
+            }
+
+        }
+
+        private void Button0_PressedBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+
+
+            if (!reclasificacionHecha)
+            {
+                Application.SBO_Application.SetStatusErrorMessage("Debe realizar al menos una reclasificación para poder crear");
+                BubbleEvent = false;
+                return;
+            }
+
+            var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
+            if (saldoPorAsignar > 0.00)
+            {
+                Application.SBO_Application.SetStatusErrorMessage("No se puede crear la reclasificación cuando hay un saldo pendiente por asignar");
+                BubbleEvent = false;
+                return;
+            }
+        }
+
+        private SAPbouiCOM.EditText EditText7;
+
+        private void Form_DataAddAfter(ref SAPbouiCOM.BusinessObjectInfo pVal)
+        {
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            var newKey = XDocument.Parse(pVal.ObjectKey).Descendants("DocEntry").FirstOrDefault()?.Value;
+            var sqlQry = $"update T0 set T0.U_EXC_TOTPLANI = T1.U_TOT_DISP,T0.U_EXC_TOTDIS =" +
+                $" T1.U_TOT_DISP from  \"@EXC_PRESGEN1\" T0 inner join \"@EXD_GPR1\" T1 on T0.U_EXC_GERENCIA =" +
+                $" T1.U_GERENCIA and  T0.U_EXC_CODPARPR = T1.U_COD_PRTPRSP and T1.\"DocEntry\" = '{newKey}'";
+
+            if (SBOCompany.DbServerType == SAPbobsCOM.BoDataServerTypes.dst_HANADB)
+            {
+                sqlQry = $"update \"@EXC_PRESGEN1\" T0 set T0.U_EXC_TOTPLANI = (T0.U_EXC_TOTPLANI - T2.U_SALDO_ASIGNAR)," +
+                    $"T0.U_EXC_TOTDIS = T2.U_TOT_DISP from  \"@EXC_PRESGEN1\" T0 " +
+                    $"inner join \"@EXD_OGPR\" T1 on T0.\"Code\" = T1.U_COD_PRESUP " +
+                    $"inner join \"@EXD_GPR1\" T2 on T2.\"DocEntry\" = T1.\"DocEntry\" " +
+                    $"where T0.U_EXC_GERENCIA = T2.U_GERENCIA and  T0.U_EXC_CODPARPR = T2.U_COD_PRTPRSP " +
+                    $"and T1.\"DocEntry\" = '{newKey}'";
+            }
+            recSet.DoQuery(sqlQry);
+            reclasificacionHecha = false;
+            Task.Factory.StartNew(() =>
+            {
+                LoadDataOnAddMode();
+            });
         }
     }
 }

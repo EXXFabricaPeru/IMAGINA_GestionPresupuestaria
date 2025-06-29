@@ -8,6 +8,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
 {
     class Menu
     {
+        private FormGestionPresupuesto formGestionPresupuesto = null;
+
         public void AddMenuItems()
         {
             SAPbouiCOM.Menus oMenus = null;
@@ -63,8 +65,13 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
             {
                 if (pVal.BeforeAction && pVal.MenuUID == "EXX_IMG_ControlPresupuestal.Presentation.Form1")
                 {
-                    FormGestionPresupuesto activeForm = new FormGestionPresupuesto();
-                    activeForm.Show();
+                    formGestionPresupuesto = new FormGestionPresupuesto();
+                    formGestionPresupuesto.Show();
+                }
+
+                if (!pVal.BeforeAction && pVal.MenuUID == "1282")
+                {
+                    formGestionPresupuesto.LoadDataOnAddMode();
                 }
             }
             catch (Exception ex)
