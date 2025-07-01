@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("B1Studio.VSIntegration.UICSharpTemplate")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("EXX_CONTROL_PRESUPESTAL")]
+[assembly: AssemblyDescription("Addon de control de presupuestos")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("B1Studio.VSIntegration.UICSharpTemplate")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2012")]
+[assembly: AssemblyCompany("EXXIS PERU")]
+[assembly: AssemblyProduct("EXX_CONTROL_PRESUPESTAL")]
+[assembly: AssemblyCopyright("Copyright © Exxis Peru 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.0.1")]
+[assembly: AssemblyFileVersion("1.0.0.1")]

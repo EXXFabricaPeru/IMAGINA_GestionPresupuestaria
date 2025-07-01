@@ -11,6 +11,7 @@ using System.IO;
 using EXX_IMG_ControlPresupuestal.Domain.Entities;
 using System.Xml.Linq;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 {
@@ -31,7 +32,6 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private SAPbouiCOM.Matrix mtxPresupuestos;
         private SAPbouiCOM.Button Button0;
         private SAPbouiCOM.Button Button1;
-        private SAPbouiCOM.EditText EditText5;
         private SAPbouiCOM.StaticText StaticText6;
         private SAPbouiCOM.ComboBox cmbSeries;
         private SAPbouiCOM.EditText EditText0;
@@ -39,11 +39,9 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private SAPbouiCOM.EditText edtFchCreacion;
         private SAPbouiCOM.StaticText StaticText7;
         private SAPbouiCOM.StaticText StaticText8;
-        private SAPbouiCOM.EditText EditText2;
-        private SAPbouiCOM.EditText EditText3;
-        private SAPbouiCOM.EditText EditText4;
         private SAPbouiCOM.EditText EditText6;
         private SAPbouiCOM.StaticText StaticText9;
+        private SAPbouiCOM.EditText EditText7;
 
         //Datasources
         SAPbouiCOM.DBDataSource dbsOGPR = null;
@@ -118,7 +116,6 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
             this.dbsOGPR = this.UIAPIRawForm.GetDBDataSource("@EXD_OGPR");
             this.dbsGPR1 = this.UIAPIRawForm.GetDBDataSource("@EXD_GPR1");
-            this.EditText5 = ((SAPbouiCOM.EditText)(this.GetItem("Item_20").Specific));
             this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_13").Specific));
             this.cmbSeries = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_14").Specific));
             this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Item_15").Specific));
@@ -126,9 +123,6 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.edtFchCreacion = ((SAPbouiCOM.EditText)(this.GetItem("Item_17").Specific));
             this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_18").Specific));
             this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_19").Specific));
-            this.EditText2 = ((SAPbouiCOM.EditText)(this.GetItem("Item_21").Specific));
-            this.EditText3 = ((SAPbouiCOM.EditText)(this.GetItem("Item_22").Specific));
-            this.EditText4 = ((SAPbouiCOM.EditText)(this.GetItem("Item_23").Specific));
             this.EditText6 = ((SAPbouiCOM.EditText)(this.GetItem("Item_24").Specific));
             this.StaticText9 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_25").Specific));
             this.udsSPATDP = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_SPATDP");
@@ -142,7 +136,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         /// </summary>
         public override void OnInitializeFormEvents()
         {
-            this.DataAddAfter += new DataAddAfterHandler(this.Form_DataAddAfter);
+            this.DataAddAfter += new SAPbouiCOM.Framework.FormBase.DataAddAfterHandler(this.Form_DataAddAfter);
+            this.DataLoadAfter += new DataLoadAfterHandler(this.Form_DataLoadAfter);
 
         }
 
@@ -186,12 +181,10 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             try
             {
                 recSet.DoQuery(sqlQry);
-
+                /*
                 sqlQry = $"select distinct T1.U_EXC_GERENCIA,T1.U_EXC_GERENCIA from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
                     $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
-
-                recSet.DoQuery(sqlQry);
-                cmbGerencia.LoadValidValues(recSet);
+                */
 
                 sqlQry = $"select distinct T1.\"Code\",T1.\"Code\" from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
                     $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
@@ -208,7 +201,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                     dbsOGPR.SetValueExt("U_COD_SUCURSAL", recSet.Fields.Item(0).Value.ToString());
                 }
 
-                dbsOGPR.SetValueExt("U_GERENCIA", null);
+                //dbsOGPR.SetValueExt("U_GERENCIA", null);
                 dbsOGPR.SetValueExt("U_COD_PRESUP", null);
 
                 dbsGPR1.Clear();
@@ -234,6 +227,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
             dbsGPR1.Clear();
             mtxPresupuestos.LoadFromDataSource();
+            mtxPresupuestos.Columns.Item("Col_10").BackColor = -1;
             recSet.DoQuery(sqlQry);
             if (recSet.RecordCount > 0)
             {
@@ -298,13 +292,12 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void mtxPresupuestos_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            //Application.SBO_Application.MessageBox("Hola mundo");
 
         }
 
         private void mtxPresupuestos_DoubleClickAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            if(pVal.ColUID == "#" && pVal.Row >0)
+            if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_ADD_MODE && pVal.ColUID == "#" && pVal.Row > 0)
             {
                 var codPartida = dbsGPR1.GetValue("U_COD_PRTPRSP", pVal.Row - 1);
                 var dscPartida = dbsGPR1.GetValue("U_DSC_PRTPRSP", pVal.Row - 1);
@@ -325,7 +318,11 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                     TotalDisponible = Convert.ToDouble(totalDisponible)
                 };
 
-                var formReclasPartPresup = new FormReclasificarPartidaPresup(partidaPresupuestal);
+                var formReclasPartPresup = new FormReclasificarPartidaPresup(partidaPresupuestal, dbsGPR1, () =>
+                {
+                    reclasificacionHecha = true;
+                    mtxPresupuestos.LoadFromDataSourceEx();
+                });
                 formReclasPartPresup.Show();
             }
         }
@@ -338,6 +335,23 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             dbsOGPR.SetValue("DocNum", 0, UIAPIRawForm.BusinessObject.GetNextSerialNumber(dbsOGPR.GetValue("Series", 0).Trim(), UIAPIRawForm.BusinessObject.Type).ToString());
             dbsOGPR.SetValueExt("CreateDate", DateTime.Today.ToString("yyyyMMdd"));
             dbsOGPR.SetValueExt("Creator", SBOCompany.UserName);
+
+            //Gerencias
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            var gerenciaPorDefecto = string.Empty;
+            var sqlQry = $"select U_COD_GERENCIA,U_COD_GERENCIA,U_POR_DEFECTO from \"@EXD_GERUSU1\" T0 inner join \"@EXD_OGERUSU\" T1 on T0.\"Code\" = T1.\"Code\" where T1.\"Code\" = '{SBOCompany.UserName}'";
+            recSet.DoQuery(sqlQry);
+            while (cmbGerencia.ValidValues.Count > 0) cmbGerencia.ValidValues.Remove(0, SAPbouiCOM.BoSearchKey.psk_Index);
+            while (!recSet.EoF)
+            {
+                cmbGerencia.ValidValues.Add(recSet.Fields.Item(0).Value.ToString(), recSet.Fields.Item(0).Value.ToString());
+                if (recSet.Fields.Item(2).Value.ToString() == "Y") gerenciaPorDefecto = recSet.Fields.Item(0).Value.ToString();
+                recSet.MoveNext();
+            }
+
+            if (!string.IsNullOrWhiteSpace(gerenciaPorDefecto)) cmbGerencia.Select(gerenciaPorDefecto, SAPbouiCOM.BoSearchKey.psk_ByValue);
+
+            HabilitarControlesPorEstado();
         }
 
         private void mtxPresupuestos_ValidateBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
@@ -345,32 +359,44 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             BubbleEvent = true;
             if (validarCambioDeMontoDisp)
             {
-                //var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
-                this.UIAPIRawForm.Freeze(true);
-
-                mtxPresupuestos.FlushToDataSource();
-                var saldoDisponible = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP", pVal.Row - 1));
-                var saldoDisponibleAux = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP_AUX", pVal.Row - 1));
-
-                dbsGPR1.SetValue("U_SALDO_ASIGNAR", pVal.Row - 1, (saldoDisponibleAux - saldoDisponible).ToString());
-
-                mtxPresupuestos.LoadFromDataSourceEx();
-
-                var saldoPorAsignarTot = 0.00;
-                for (int i = 0; i < dbsGPR1.Size; i++)
+                try
                 {
-                    saldoPorAsignarTot += Convert.ToDouble(dbsGPR1.GetValue("U_SALDO_ASIGNAR", i));
+                    //var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
+                    this.UIAPIRawForm.Freeze(true);
+
+                    mtxPresupuestos.FlushToDataSource();
+                    var saldoDisponible = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP", pVal.Row - 1));
+                    var saldoDisponibleAux = Convert.ToDouble(dbsGPR1.GetValue("U_TOT_DISP_AUX", pVal.Row - 1));
+                    var totalAsignar = saldoDisponibleAux - saldoDisponible;
+                    var colorRojo = RGBtoInt(255, 153, 153);
+                    var colorVerde = RGBtoInt(153, 255, 153);
+                    var colorBlanco = -1;
+
+                    dbsGPR1.SetValue("U_SALDO_ASIGNAR", pVal.Row - 1, totalAsignar.ToString());
+
+                    mtxPresupuestos.LoadFromDataSourceEx();
+
+                    var saldoPorAsignarTot = 0.00;
+                    for (int i = 0; i < dbsGPR1.Size; i++)
+                    {
+                        saldoPorAsignarTot += Convert.ToDouble(dbsGPR1.GetValue("U_SALDO_ASIGNAR", i));
+                    }
+
+                    this.UIAPIRawForm.Freeze(false);
+
+                    if (saldoPorAsignarTot != 0) reclasificacionHecha = true;
+
+                    udsSPATDP.ValueEx = saldoPorAsignarTot.ToString();
+                    if (saldoPorAsignarTot < 0.00)
+                    {
+                        Application.SBO_Application.SetStatusErrorMessage("No es posible realizar un incremento que excede el saldo");
+                        BubbleEvent = false;
+                    }
+                    mtxPresupuestos.CommonSetting.SetCellBackColor(pVal.Row, 11, totalAsignar > 0 ? colorRojo : (totalAsignar < 0 ? colorVerde : colorBlanco));
                 }
-
-                this.UIAPIRawForm.Freeze(false);
-
-                if (saldoPorAsignarTot != 0) reclasificacionHecha = true;
-
-                udsSPATDP.ValueEx = saldoPorAsignarTot.ToString();
-                if (saldoPorAsignarTot < 0.00)
+                catch (Exception ex)
                 {
-                    Application.SBO_Application.SetStatusErrorMessage("No es posible realizar un incremento que excede el saldo");
-                    BubbleEvent = false;
+                    Application.SBO_Application.SetStatusErrorMessage(ex.Message);
                 }
             }
         }
@@ -414,24 +440,45 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         {
             BubbleEvent = true;
 
-
-            if (!reclasificacionHecha)
+            try
             {
-                Application.SBO_Application.SetStatusErrorMessage("Debe realizar al menos una reclasificación para poder crear");
-                BubbleEvent = false;
-                return;
+                if (!reclasificacionHecha)
+                {
+                    Application.SBO_Application.SetStatusErrorMessage("Debe realizar al menos una reclasificación para poder crear");
+                    BubbleEvent = false;
+                    return;
+                }
+
+                var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
+                if (saldoPorAsignar > 0.00)
+                {
+                    Application.SBO_Application.SetStatusErrorMessage("No se puede crear la reclasificación cuando hay un saldo pendiente por asignar");
+                    BubbleEvent = false;
+                    return;
+                }
+
+                QuitarFilasNoSeleccionadas();
+                dbsOGPR.SetValueExt("Status", "C");
             }
-
-            var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
-            if (saldoPorAsignar > 0.00)
+            catch (Exception ex)
             {
-                Application.SBO_Application.SetStatusErrorMessage("No se puede crear la reclasificación cuando hay un saldo pendiente por asignar");
+                Application.SBO_Application.SetStatusErrorMessage(ex.Message);
                 BubbleEvent = false;
-                return;
             }
         }
 
-        private SAPbouiCOM.EditText EditText7;
+        private void HabilitarControlesPorEstado()
+        {
+            var estado = dbsOGPR.GetValueExt("Status");
+            var habilitado = estado == "O";
+            cmbProyecto.Item.Enabled = habilitado;
+            cmbEtapa.Item.Enabled = habilitado;
+            cmbSubEtapa.Item.Enabled = habilitado;
+            cmbGerencia.Item.Enabled = habilitado;
+            cmbPresupuesto.Item.Enabled = habilitado;
+            cmbSeries.Item.Enabled = habilitado;
+            mtxPresupuestos.Item.Enabled = habilitado;
+        }
 
         private void Form_DataAddAfter(ref SAPbouiCOM.BusinessObjectInfo pVal)
         {
@@ -456,6 +503,39 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             {
                 LoadDataOnAddMode();
             });
+        }
+
+        private void Form_DataLoadAfter(ref SAPbouiCOM.BusinessObjectInfo pVal)
+        {
+            HabilitarControlesPorEstado();
+        }
+
+        private void QuitarFilasNoSeleccionadas()
+        {
+            mtxPresupuestos.FlushToDataSource();
+            var _xmlSerializer = new XmlSerializer(typeof(XMLDBDataSource));
+            var strXMLDTDocs = dbsGPR1.GetAsXML();
+            var xr = XmlReader.Create(new StringReader(strXMLDTDocs), new XmlReaderSettings { IgnoreWhitespace = false });
+
+            var _dsrXmlDBDataSource = (XMLDBDataSource)_xmlSerializer.Deserialize(xr);
+
+            _dsrXmlDBDataSource.Rows = _dsrXmlDBDataSource.Rows.ToList().Where(r => Convert.ToDouble(r.Cells.FirstOrDefault(c => c.Uid == "U_SALDO_ASIGNAR").Value) != 0.00).ToArray();
+
+            if (_dsrXmlDBDataSource.Rows.Length == 0) throw new Exception("Debe realizar al menos una reclasificacion para crear");
+
+            _xmlSerializer = new XmlSerializer(typeof(XMLDBDataSource));
+            using (var strWritter = new StringWriter())
+            {
+                _xmlSerializer.Serialize(strWritter, _dsrXmlDBDataSource);
+                var verTmp = strWritter.ToString();
+                dbsGPR1.LoadFromXML(strWritter.ToString());
+                mtxPresupuestos.LoadFromDataSource();
+            }
+        }
+
+        public static int RGBtoInt(int r, int g, int b)
+        {
+            return (r << 0) | (g << 8) | (b << 16);
         }
     }
 }

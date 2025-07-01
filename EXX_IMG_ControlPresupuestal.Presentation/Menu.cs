@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using JF_SBOAddon.Utiles.Extensions;
 using EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms;
 
 namespace EXX_IMG_ControlPresupuestal.Presentation
@@ -12,48 +13,55 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
 
         public void AddMenuItems()
         {
-            SAPbouiCOM.Menus oMenus = null;
-            SAPbouiCOM.MenuItem oMenuItem = null;
-
-            oMenus = Application.SBO_Application.Menus;
-
-            SAPbouiCOM.MenuCreationParams oCreationPackage = null;
-            oCreationPackage = ((SAPbouiCOM.MenuCreationParams)(Application.SBO_Application.CreateObject(SAPbouiCOM.BoCreatableObjectType.cot_MenuCreationParams)));
-            oMenuItem = Application.SBO_Application.Menus.Item("43520"); // moudles'
-
-            oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_POPUP;
-            oCreationPackage.UniqueID = "EXX_IMG_ControlPresupuestal.Presentation";
-            oCreationPackage.String = "EXX_IMG_ControlPresupuestal.Presentation";
-            oCreationPackage.Enabled = true;
-            oCreationPackage.Position = -1;
-
-            oMenus = oMenuItem.SubMenus;
-
             try
             {
-                //  If the manu already exists this code will fail
-                oMenus.AddEx(oCreationPackage);
+                SAPbouiCOM.Menus oMenus = null;
+                SAPbouiCOM.MenuItem oMenuItem = null;
+
+                oMenus = Application.SBO_Application.Menus;
+
+                SAPbouiCOM.MenuCreationParams oCreationPackage = null;
+                oCreationPackage = ((SAPbouiCOM.MenuCreationParams)(Application.SBO_Application.CreateObject(SAPbouiCOM.BoCreatableObjectType.cot_MenuCreationParams)));
+
+                Application.SBO_Application.SetStatusSuccessMessage("Control presupuestal: cargando opciones de menú");
+
+                Application.SBO_Application.Forms.GetForm("169", 1)?.Freeze(true);
+
+                oMenuItem = Application.SBO_Application.Menus.Item("1536"); //Finanzas'               
+
+                if (!oMenus.Exists("MNU_OGPR"))
+                {
+                    oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_POPUP;
+                    oCreationPackage.UniqueID = "MNU_OGPR";
+                    oCreationPackage.String = "Control presupuestal";
+                    oCreationPackage.Enabled = true;
+                    oCreationPackage.Position = -1;
+
+                    oMenus = oMenuItem.SubMenus;
+                    oMenus.AddEx(oCreationPackage);
+                }
+
+                if (!oMenus.Exists("MNU_OGPR_001"))
+                {
+                    // Get the menu collection of the newly added pop-up item
+                    oMenuItem = Application.SBO_Application.Menus.Item("MNU_OGPR");
+                    oMenus = oMenuItem.SubMenus;
+                    // Create s sub menu
+                    oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_STRING;
+                    oCreationPackage.UniqueID = "MNU_OGPR_001";
+                    oCreationPackage.String = "Gestión de presupuesto";
+                    oMenus.AddEx(oCreationPackage);
+                }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-
+                Application.SBO_Application.SetStatusBarMessage(ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
             }
-
-            try
+            finally
             {
-                // Get the menu collection of the newly added pop-up item
-                oMenuItem = Application.SBO_Application.Menus.Item("EXX_IMG_ControlPresupuestal.Presentation");
-                oMenus = oMenuItem.SubMenus;
-
-                // Create s sub menu
-                oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_STRING;
-                oCreationPackage.UniqueID = "EXX_IMG_ControlPresupuestal.Presentation.Form1";
-                oCreationPackage.String = "Form1";
-                oMenus.AddEx(oCreationPackage);
-            }
-            catch (Exception er)
-            { //  Menu already exists
-                Application.SBO_Application.SetStatusBarMessage("Menu Already Exists", SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                Application.SBO_Application.Forms.GetForm("169", 1)?.Freeze(false);
+                Application.SBO_Application.Forms.GetForm("169", 1)?.Update();
+                Application.SBO_Application.SetStatusSuccessMessage("Control presupuestal: opciones de menú cargados correctamente");
             }
         }
 
@@ -63,13 +71,13 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
 
             try
             {
-                if (pVal.BeforeAction && pVal.MenuUID == "EXX_IMG_ControlPresupuestal.Presentation.Form1")
+                if (pVal.BeforeAction && pVal.MenuUID == "MNU_OGPR_001")
                 {
                     formGestionPresupuesto = new FormGestionPresupuesto();
                     formGestionPresupuesto.Show();
                 }
 
-                if (!pVal.BeforeAction && pVal.MenuUID == "1282")
+                if (!pVal.BeforeAction && Application.SBO_Application.Forms.ActiveForm.TypeEx == "FormGestionPresupuesto" && pVal.MenuUID == "1282")
                 {
                     formGestionPresupuesto.LoadDataOnAddMode();
                 }

@@ -54,12 +54,18 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private SAPbouiCOM.UserDataSource udsMNTR = null;
         private SAPbouiCOM.UserDataSource udsSLAS = null;
 
-        private SAPbouiCOM.DataTable dttPartidasPrespuestales = null;
+        //private SAPbouiCOM.DataTable dttPartidasPrespuestales = null;
 
+        private SAPbouiCOM.DBDataSource _dbsGPR1 = null;
+        private SAPbouiCOM.DBDataSource dbsGPR1 = null;
 
-        public FormReclasificarPartidaPresup(PartidaPresupuestal partidaPresupuestal)
+        private Action _actualizarPrincipalHandler = null;
+
+        public FormReclasificarPartidaPresup(PartidaPresupuestal partidaPresupuestal, SAPbouiCOM.DBDataSource dbsGPR1, Action actualizarPrincipalHandler)
         {
+            this._actualizarPrincipalHandler = actualizarPrincipalHandler;
             this._partidaPresupuestal = partidaPresupuestal;
+            this._dbsGPR1 = dbsGPR1;
 
             MostrarDescProyecto(_partidaPresupuestal.CodProyecto);
             CargarSucursales();
@@ -124,7 +130,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.udsTTDS = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_TTDS");
             this.udsMNTR = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_MNTR");
             this.udsSLAS = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_SLAS");
-            this.dttPartidasPrespuestales = this.UIAPIRawForm.DataSources.DataTables.Item("DT_PP");
+            //this.dttPartidasPrespuestales = this.UIAPIRawForm.DataSources.DataTables.Item("DT_PP");
+            this.dbsGPR1 = this.UIAPIRawForm.GetDBDataSource("@EXD_GPR1");
             this.OnCustomInitialize();
 
         }
@@ -140,8 +147,12 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void OnCustomInitialize()
         {
+            this.UIAPIRawForm.EnableMenu("1282", false);
+
             mtxPartidasPresup.Columns.Item("Col_3").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Manual;
             mtxPartidasPresup.Columns.Item("Col_4").ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Manual;
+
+            mtxPartidasPresup.Columns.Item("Col_5").Visible = false;
         }
 
         private void MostrarDescProyecto(string codProyecto)
@@ -166,16 +177,19 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void CargarPartidasPresupuestales(string codPresupuesto, string codGerencia, string codPartida)
         {
-            var sqlQry = $"EXEC EXD_SP_GP_DETALLE_PARTIDA_PRESUPUESTAL '{codPresupuesto}','{codGerencia}','{codPartida}'";
+            var codGrncP = udsGRNC.Value;
+            var codPresupP = udsCPRS.Value;
+            var codPrtPrspP = udsCPRT.Value;
 
-            if (SBOCompany.DbServerType == SAPbobsCOM.BoDataServerTypes.dst_HANADB)
+            dbsGPR1.LoadFromXML(_dbsGPR1.GetAsXML());
+            for (int i = 0; i < dbsGPR1.Size; i++)
             {
-                sqlQry = $"CALL EXD_SP_GP_DETALLE_PARTIDA_PRESUPUESTAL('{codPresupuesto}','{codGerencia}','{codPartida}')";
+                if (codGrncP == _dbsGPR1.GetValue("U_GERENCIA", i) && codPrtPrspP == _dbsGPR1.GetValue("U_COD_PRTPRSP", i))
+                {
+                    dbsGPR1.RemoveRecord(i);
+                }
             }
-
-            dttPartidasPrespuestales.ExecuteQuery(sqlQry);
             mtxPartidasPresup.LoadFromDataSource();
-            MostrarTotales();
             mtxPartidasPresup.AutoResizeColumns();
         }
 
@@ -193,87 +207,97 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                 return;
             }
 
-            udsSLAS.ValueEx = montoTransferir.ToString();
+            MostrarTotales();
         }
 
         private void mtxPartidasPresup_ValidateBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
-
             mtxPartidasPresup.FlushToDataSource();
-            var montoTransferir = Convert.ToDouble(udsMNTR.ValueEx);
-            var totalAsignado = 0.00;
-
-            for (int i = 0; i < dttPartidasPrespuestales.Rows.Count; i++)
-            {
-                totalAsignado += Convert.ToDouble(dttPartidasPrespuestales.GetValue("Monto adicional", i).ToString());
-            }
-
             MostrarTotales();
 
-            var saldoPorAsignar = montoTransferir - totalAsignado;
-
-            udsSLAS.ValueEx = saldoPorAsignar.ToString();
         }
 
         private void Button0_PressedBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
+            var codGrncP = udsGRNC.Value;
+            var codPresupP = udsCPRS.Value;
+            var codPrtPrspP = udsCPRT.Value;
+            var montoTransf = Convert.ToDouble(udsMNTR.ValueEx);
+
+            var codGrnc = string.Empty;
+            var codPresup = string.Empty;
+            var codPrtPrsp = string.Empty;
+            var totalPlan = 0.00;
+            var totalDisp = 0.00;
+            var montoAdic = 0.00;
+            var saldoAsig = 0.00;
 
             if (this.UIAPIRawForm.Mode != SAPbouiCOM.BoFormMode.fm_UPDATE_MODE) return;
             var saldoPorAsignar = Convert.ToDouble(udsSLAS.ValueEx);
             if (saldoPorAsignar > 0.00)
             {
-                Application.SBO_Application.SetStatusErrorMessage("No se puede generar la reclasificacion cuando hay un saldo mayor a cero");
+                Application.SBO_Application.SetStatusErrorMessage("No se puede generar la reclasificación cuando hay un saldo mayor a cero");
                 BubbleEvent = false;
                 return;
             }
+
+            if (saldoPorAsignar < 0.00)
+            {
+                Application.SBO_Application.SetStatusErrorMessage("El saldo por asignar no puede ser negativo");
+                BubbleEvent = false;
+                return;
+            }
+
+            mtxPartidasPresup.FlushToDataSource();
+            for (int i = 0; i < _dbsGPR1.Size; i++)
+            {
+                codGrnc = _dbsGPR1.GetValue("U_GERENCIA", i);
+                codPrtPrsp = _dbsGPR1.GetValue("U_COD_PRTPRSP", i);
+                totalPlan = Convert.ToDouble(_dbsGPR1.GetValue("U_TOT_PLAN", i));
+                totalDisp = Convert.ToDouble(_dbsGPR1.GetValue("U_TOT_DISP", i));
+                saldoAsig = Convert.ToDouble(_dbsGPR1.GetValue("U_SALDO_ASIGNAR", i));
+                if (codGrnc == codGrncP && codPrtPrsp == codPrtPrspP)
+                {
+                    _dbsGPR1.SetValue("U_TOT_DISP", i, (totalDisp - montoTransf).ToString());
+                    _dbsGPR1.SetValue("U_SALDO_ASIGNAR", i, (saldoAsig + montoTransf).ToString());
+                    continue;
+                }
+                for (int j = 0; j < dbsGPR1.Size; j++)
+                {
+                    montoAdic = Convert.ToDouble(dbsGPR1.GetValue("U_MNT_ADIC", j));
+                    if (codGrnc == dbsGPR1.GetValue("U_GERENCIA", j) && codPrtPrsp == dbsGPR1.GetValue("U_COD_PRTPRSP", j))
+                    {
+                        _dbsGPR1.SetValue("U_TOT_DISP", i, (totalDisp + montoAdic).ToString());
+                        _dbsGPR1.SetValue("U_SALDO_ASIGNAR", i, (saldoAsig - montoAdic).ToString());
+                        break;
+                    }
+                }
+            }
+            _actualizarPrincipalHandler();
+            this.UIAPIRawForm.Mode = SAPbouiCOM.BoFormMode.fm_OK_MODE;
+            BubbleEvent = false;
         }
 
         private void Button0_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
 
-            var sqlQryUpdt = string.Empty;
-            var montoAdicional = 0.00;
-            var gerencia = udsGRNC.Value;
-            var partidaPresup = udsCPRT.Value;
-            var codPresup = udsCPRS.Value;
-
-            var sqlQry = $"update \"@EXC_PRESGEN1\" set U_EXC_TOTPLANI = U_EXC_TOTPLANI - " +
-                $"{Convert.ToDouble(udsMNTR.ValueEx)} ,U_EXC_TOTDIS = U_EXC_TOTDIS - " +
-                $"{Convert.ToDouble(udsMNTR.ValueEx)}  where  \"Code\" = '{codPresup}' and U_EXC_GERENCIA = '{gerencia}' " +
-                $"and U_EXC_CODPARPR = '{partidaPresup}'";
-            recSet.DoQuery(sqlQry);
-
-            sqlQry = "update \"@EXC_PRESGEN1\" set U_EXC_TOTPLANI = U_EXC_TOTPLANI + {0}, U_EXC_TOTDIS = U_EXC_TOTDIS + {0}  where \"Code\" = '"+ codPresup +"' and U_EXC_GERENCIA = '{1}' and U_EXC_CODPARPR = '{2}'";
-
-            for (int i = 0; i < dttPartidasPrespuestales.Rows.Count; i++)
-            {
-                montoAdicional = Convert.ToDouble(dttPartidasPrespuestales.GetValue("Monto adicional", i));
-                partidaPresup = dttPartidasPrespuestales.GetValue("Codigo partida presup", i).ToString();
-                if (montoAdicional > 0.00)
-                {
-                    sqlQryUpdt = string.Format(sqlQry, montoAdicional, gerencia, partidaPresup);
-                    recSet.DoQuery(sqlQryUpdt);
-                }
-            }
         }
-
 
         private void MostrarTotales()
         {
-            var totTotalDisp = 0.00;
-            var totMontoAdic = 0.00;
+            var montoTransferir = Convert.ToDouble(udsMNTR.ValueEx);
+            var totalAsignado = 0.00;
 
-            for (int i = 0; i < dttPartidasPrespuestales.Rows.Count; i++)
+            for (int i = 0; i < dbsGPR1.Size; i++)
             {
-                totTotalDisp += Convert.ToDouble(dttPartidasPrespuestales.GetValue("Total disponible", i));
-                totMontoAdic += Convert.ToDouble(dttPartidasPrespuestales.GetValue("Monto adicional", i));
+                totalAsignado += Convert.ToDouble(dbsGPR1.GetValue("U_MNT_ADIC", i));
             }
 
-            mtxPartidasPresup.Columns.Item("Col_3").ColumnSetting.SumValue = totTotalDisp.ToString();
-            mtxPartidasPresup.Columns.Item("Col_4").ColumnSetting.SumValue = totMontoAdic.ToString();
+            var saldoPorAsignar = montoTransferir - totalAsignado;
+
+            udsSLAS.ValueEx = saldoPorAsignar.ToString();
         }
     }
 }
