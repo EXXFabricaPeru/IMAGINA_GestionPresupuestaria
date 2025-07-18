@@ -50,6 +50,20 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
                     oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_STRING;
                     oCreationPackage.UniqueID = "MNU_OGPR_001";
                     oCreationPackage.String = "Gestión de presupuesto";
+                    oCreationPackage.Position = 1;
+                    oMenus.AddEx(oCreationPackage);
+                }
+
+                if (!oMenus.Exists("MNU_OGPR_002"))
+                {
+                    // Get the menu collection of the newly added pop-up item
+                    oMenuItem = Application.SBO_Application.Menus.Item("MNU_OGPR");
+                    oMenus = oMenuItem.SubMenus;
+                    // Create s sub menu
+                    oCreationPackage.Type = SAPbouiCOM.BoMenuType.mt_STRING;
+                    oCreationPackage.UniqueID = "MNU_OGPR_002";
+                    oCreationPackage.String = "Kardex";
+                    oCreationPackage.Position = 2;
                     oMenus.AddEx(oCreationPackage);
                 }
             }
@@ -77,7 +91,13 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
                     formGestionPresupuesto.Show();
                 }
 
-                if (!pVal.BeforeAction && Application.SBO_Application.Forms.ActiveForm.TypeEx == "FormGestionPresupuesto" && pVal.MenuUID == "1282")
+                if (pVal.BeforeAction && pVal.MenuUID == "MNU_OGPR_002")
+                {
+                    new FormKardex().Show();
+                }
+
+                if (!pVal.BeforeAction && Application.SBO_Application.Forms.ActiveForm != null &&
+                    Application.SBO_Application.Forms.ActiveForm.TypeEx == "FormGestionPresupuesto" && pVal.MenuUID == "1282")
                 {
                     formGestionPresupuesto.LoadDataOnAddMode();
                 }

@@ -58,25 +58,20 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         public FormGestionPresupuesto()
         {
             //Carganado datoa al formuario
-            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-            var sqlQry = "select \"PrjCode\",\"PrjName\" from OPRJ order by 2";
+            // var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            // var sqlQry = "select \"PrjCode\",\"PrjName\" from OPRJ order by 2";
 
             //Proyecto
-            recSet.DoQuery(sqlQry);
-            cmbProyecto.LoadValidValues(recSet);
+            //recSet.DoQuery(sqlQry);
+            //cmbProyecto.LoadValidValues(recSet);
 
             //Etapa
-            sqlQry = "SELECT \"PrcCode\", \"PrcName\" FROM OPRC WHERE \"DimCode\" = 1 AND \"Active\" = 'Y'";
-            recSet.DoQuery(sqlQry);
-            cmbEtapa.LoadValidValues(recSet);
+            //var sqlQry = "SELECT \"PrcCode\", \"PrcName\" FROM OPRC WHERE \"DimCode\" = 1 AND \"Active\" = 'Y'";
+            //recSet.DoQuery(sqlQry);
+            //cmbEtapa.LoadValidValues(recSet);
 
             //SubEtapa
-            cmbSubEtapa.ValidValues.Add("SET00", "SET00");
-
-            //Sucursal
-            sqlQry = "select \"BPLId\",\"BPLName\" from OBPL";
-            recSet.DoQuery(sqlQry);
-            cmbSucursal.LoadValidValues(recSet);
+            //cmbSubEtapa.ValidValues.Add("SET00", "SET00");
 
             mtxPresupuestos.AutoResizeColumns();
 
@@ -99,6 +94,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.cmbSubEtapa.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbSubEtapa_ComboSelectAfter);
             this.StaticText3 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_6").Specific));
             this.cmbSucursal = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_7").Specific));
+            this.cmbSucursal.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbSucursal_ComboSelectAfter);
             this.StaticText4 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_8").Specific));
             this.cmbGerencia = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_9").Specific));
             this.cmbGerencia.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbGerencia_ComboSelectAfter);
@@ -157,41 +153,78 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void cmbSubEtapa_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
+            dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+            cmbPresupuesto.ClearValidValues();
+
             SeleccionarSucursalGerenciaCodPresup(cmbProyecto.Value, cmbEtapa.Value, cmbSubEtapa.Value);
+
+            dbsGPR1.Clear();
+            mtxPresupuestos.LoadFromDataSource();
         }
 
         private void cmbEtapa_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            SeleccionarSucursalGerenciaCodPresup(cmbProyecto.Value, cmbEtapa.Value, cmbSubEtapa.Value);
+            dbsOGPR.SetValueExt("U_SUB_ETAPA", null);
+            cmbSubEtapa.ClearValidValues();
+            dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+            cmbPresupuesto.ClearValidValues();
+
+            //SeleccionarSucursalGerenciaCodPresup(cmbProyecto.Value, cmbEtapa.Value, cmbSubEtapa.Value);
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+            var sqlQry = $"select distinct U_EXC_SUBETA,U_EXC_SUBETA from \"@EXC_PRESGENE\" where U_EXC_IDEMPRE = '{dbsOGPR.GetValueExt("U_COD_SUCURSAL")}' " +
+                $"and U_EXC_CODIPROY = '{dbsOGPR.GetValueExt("U_COD_PROYECTO")}' and U_EXC_ETAPA = '{dbsOGPR.GetValueExt("U_ETAPA")}'";
+
+            recSet.DoQuery(sqlQry);
+            cmbSubEtapa.LoadValidValues(recSet);
+
+            dbsGPR1.Clear();
+            mtxPresupuestos.LoadFromDataSource();
         }
 
         private void cmbProyecto_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
-            SeleccionarSucursalGerenciaCodPresup(cmbProyecto.Value, cmbEtapa.Value, cmbSubEtapa.Value);
+            dbsOGPR.SetValueExt("U_ETAPA", null);
+            cmbEtapa.ClearValidValues();
+            dbsOGPR.SetValueExt("U_SUB_ETAPA", null);
+            cmbSubEtapa.ClearValidValues();
+            dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+            cmbPresupuesto.ClearValidValues();
+
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+            var sqlQry = $"select distinct \"PrcCode\",\"PrcName\" from \"@EXC_PRESGENE\" T0 inner join OPRC T1 on T0.U_EXC_ETAPA = T1.\"PrcCode\" where T0.U_EXC_CODIPROY = '{dbsOGPR.GetValueExt("U_COD_PROYECTO")}' and U_EXC_IDEMPRE = {dbsOGPR.GetValueExt("U_COD_SUCURSAL")}";
+
+            recSet.DoQuery(sqlQry);
+            cmbEtapa.LoadValidValues(recSet);
+
+            dbsGPR1.Clear();
+            mtxPresupuestos.LoadFromDataSource();
+            //SeleccionarSucursalGerenciaCodPresup(cmbProyecto.Value, cmbEtapa.Value, cmbSubEtapa.Value);
         }
 
 
         private void SeleccionarSucursalGerenciaCodPresup(string codProyecto, string codEtapa, string codSubEtapa)
         {
-
-
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-            var sqlQry = $"select U_EXC_IDEMPRE from \"@EXC_PRESGENE\" where U_EXC_CODIPROY = '{codProyecto}' and U_EXC_ETAPA = '{codEtapa}' and U_EXC_SUBETA = '{codSubEtapa}'";
+            var sqlQry = string.Empty;//$"select U_EXC_IDEMPRE from \"@EXC_PRESGENE\" where U_EXC_CODIPROY = '{codProyecto}' and U_EXC_ETAPA = '{codEtapa}' and U_EXC_SUBETA = '{codSubEtapa}'";
 
             try
             {
-                recSet.DoQuery(sqlQry);
                 /*
+                recSet.DoQuery(sqlQry);
+              
                 sqlQry = $"select distinct T1.U_EXC_GERENCIA,T1.U_EXC_GERENCIA from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
                     $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
                 */
 
                 sqlQry = $"select distinct T1.\"Code\",T1.\"Code\" from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
-                    $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
+                    $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}' and coalesce(T0.U_EXC_ESTADO,'') = 'A'";
 
                 recSet.DoQuery(sqlQry);
                 cmbPresupuesto.LoadValidValues(recSet);
 
+                /*
                 sqlQry = $"select distinct U_EXC_IDEMPRE from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"Code\" = T1.\"Code\" " +
                     $"where T0.U_EXC_CODIPROY = '{codProyecto}' and T0.U_EXC_ETAPA = '{codEtapa}' and T0.U_EXC_SUBETA = '{codSubEtapa}'";
 
@@ -200,9 +233,9 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                 {
                     dbsOGPR.SetValueExt("U_COD_SUCURSAL", recSet.Fields.Item(0).Value.ToString());
                 }
-
+                */
                 //dbsOGPR.SetValueExt("U_GERENCIA", null);
-                dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+                //dbsOGPR.SetValueExt("U_COD_PRESUP", null);
 
                 dbsGPR1.Clear();
                 mtxPresupuestos.LoadFromDataSource();
@@ -282,6 +315,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         private void cmbGerencia_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
+            //dbsOGPR.SetValueExt("U_COD_PRESUP", null);
             CargarPresupuestos(cmbPresupuesto.Value, cmbGerencia.Value);
         }
 
@@ -336,10 +370,16 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             dbsOGPR.SetValueExt("CreateDate", DateTime.Today.ToString("yyyyMMdd"));
             dbsOGPR.SetValueExt("Creator", SBOCompany.UserName);
 
-            //Gerencias
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
             var gerenciaPorDefecto = string.Empty;
-            var sqlQry = $"select U_COD_GERENCIA,U_COD_GERENCIA,U_POR_DEFECTO from \"@EXD_GERUSU1\" T0 inner join \"@EXD_OGERUSU\" T1 on T0.\"Code\" = T1.\"Code\" where T1.\"Code\" = '{SBOCompany.UserName}'";
+
+            //Sucursal
+            var sqlQry = $"select T0.\"BPLId\",T0.\"BPLName\" from OBPL T0 inner join USR6 T1 on T0.\"BPLId\" = T1.\"BPLId\" where \"UserCode\" = '{SBOCompany.UserName}'";
+            recSet.DoQuery(sqlQry);
+            cmbSucursal.LoadValidValues(recSet);
+
+            //Gerencias
+            sqlQry = $"select U_COD_GERENCIA,U_COD_GERENCIA,U_POR_DEFECTO from \"@EXD_GERUSU1\" T0 inner join \"@EXD_OGERUSU\" T1 on T0.\"Code\" = T1.\"Code\" where T1.\"Code\" = '{SBOCompany.UserName}'";
             recSet.DoQuery(sqlQry);
             while (cmbGerencia.ValidValues.Count > 0) cmbGerencia.ValidValues.Remove(0, SAPbouiCOM.BoSearchKey.psk_Index);
             while (!recSet.EoF)
@@ -433,7 +473,6 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             {
 
             }
-
         }
 
         private void Button0_PressedBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
@@ -471,6 +510,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         {
             var estado = dbsOGPR.GetValueExt("Status");
             var habilitado = estado == "O";
+
+            cmbSucursal.Item.Enabled = habilitado;
             cmbProyecto.Item.Enabled = habilitado;
             cmbEtapa.Item.Enabled = habilitado;
             cmbSubEtapa.Item.Enabled = habilitado;
@@ -536,6 +577,28 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         public static int RGBtoInt(int r, int g, int b)
         {
             return (r << 0) | (g << 8) | (b << 16);
+        }
+
+        private void cmbSucursal_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            var sqlQry = $"select \"PrjCode\",\"PrjName\" from OPRJ where U_EXC_IDEMPRES = '{dbsOGPR.GetValueExt("U_COD_SUCURSAL")}'order by 2";
+
+            //Proyecto
+            dbsOGPR.SetValueExt("U_COD_PROYECTO", null);
+            cmbProyecto.ClearValidValues();
+            dbsOGPR.SetValueExt("U_ETAPA", null);
+            cmbEtapa.ClearValidValues();
+            dbsOGPR.SetValueExt("U_SUB_ETAPA", null);
+            cmbSubEtapa.ClearValidValues();
+            dbsOGPR.SetValueExt("U_COD_PRESUP", null);
+            cmbPresupuesto.ClearValidValues();
+
+            recSet.DoQuery(sqlQry);
+            cmbProyecto.LoadValidValues(recSet);
+
+            dbsGPR1.Clear();
+            mtxPresupuestos.LoadFromDataSource();
         }
     }
 }
