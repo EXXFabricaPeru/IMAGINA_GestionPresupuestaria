@@ -33,6 +33,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private SAPbouiCOM.ComboBox cmbCentrosDeCosto;
         private SAPbouiCOM.StaticText StaticText9;
         private SAPbouiCOM.ComboBox cmbCodigosPartidaPresp;
+        private SAPbouiCOM.Button btnComprimir;
+        private SAPbouiCOM.Button btnExpandir;
 
         //Datasources
         private SAPbouiCOM.UserDataSource udsSUCU = null;
@@ -117,6 +119,10 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.udsGERE = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_GERE");
             this.udsCPRE = this.UIAPIRawForm.DataSources.UserDataSources.Item("UD_CPRE");
             this.dttPresupuestos = this.UIAPIRawForm.DataSources.DataTables.Item("DT_PRSP");
+            this.btnComprimir = ((SAPbouiCOM.Button)(this.GetItem("Item_22").Specific));
+            this.btnComprimir.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnComprimir_PressedAfter);
+            this.btnExpandir = ((SAPbouiCOM.Button)(this.GetItem("Item_23").Specific));
+            this.btnExpandir.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnExpandir_PressedAfter);
             this.OnCustomInitialize();
 
         }
@@ -126,6 +132,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         /// </summary>
         public override void OnInitializeFormEvents()
         {
+
         }
         private void OnCustomInitialize()
         {
@@ -265,11 +272,22 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
             var colTotComp = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalComprometido");
             var colTotEjec = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalEjecutado");
+            //var colTotPlanDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificadoDetallado");
+            //var colTotDispDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponibleDetallado");
+            var colTotPlanif = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificado");
+            var colTotDispon = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponible");
 
             colTotComp.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
             colTotEjec.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
 
-            grdPresupuestos.CollapseLevel = 3;
+            colTotComp.RightJustified = true;
+            colTotEjec.RightJustified = true;
+            //colTotPlanDet.RightJustified = true;
+            //colTotDispDet.RightJustified = true;
+            colTotPlanif.RightJustified = true;
+            colTotDispon.RightJustified = true;
+
+            grdPresupuestos.CollapseLevel = 1;
 
             this.UIAPIRawForm.Refresh();
         }
@@ -291,6 +309,16 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}'";
             recSet.DoQuery(sqlQry);
             cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
+        }
+
+        private void btnExpandir_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            grdPresupuestos.Rows.ExpandAll();
+        }
+
+        private void btnComprimir_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            grdPresupuestos.Rows.CollapseAll();
         }
     }
 }
