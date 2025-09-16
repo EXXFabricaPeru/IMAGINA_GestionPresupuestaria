@@ -104,7 +104,9 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_12").Specific));
             this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_17").Specific));
             this.cmbGerencias = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_18").Specific));
+            this.cmbGerencias.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbGerencias_ComboSelectAfter);
             this.cmbCentrosDeCosto = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_19").Specific));
+            this.cmbCentrosDeCosto.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbCentrosDeCosto_ComboSelectAfter);
             this.StaticText9 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_20").Specific));
             this.cmbCodigosPartidaPresp = ((SAPbouiCOM.ComboBox)(this.GetItem("Item_21").Specific));
             this.cmbCodigosPartidaPresp.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.cmbCodigosPartidaPresp_ComboSelectAfter);
@@ -139,6 +141,41 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         }
 
+          private void cmbCentrosDeCosto_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
+          {
+              udsPPRE.Value = null;
+              cmbPartidasPresup.ClearValidValues();
+        
+              var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+              var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
+                  $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' and T1.\"U_EXC_CENCOSTO\"= '{udsCCOS.Value}' order by 1 asc  ";
+        
+              recSet.DoQuery(sqlQry);
+              cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
+          }
+        
+          private void cmbGerencias_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
+          {
+              udsPPRE.Value = null;
+              cmbPartidasPresup.ClearValidValues();
+        
+              dttPresupuestos.Rows.Clear();
+              if (!string.IsNullOrEmpty(udsCPRE.Value))
+              {
+                  var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                  var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
+                      $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' ";
+        
+                  recSet.DoQuery(sqlQry);
+                  cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
+        
+                  sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'";
+                  recSet.DoQuery(sqlQry);
+                  cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
+              }
+        
+             
+          }
         private void cmbSucursales_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
@@ -256,6 +293,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         }
         private void CargarKardex()
         {
+         try
+ {
             var codSucursal = udsSUCU.Value == "-1" ? "*" : udsSUCU.Value;
             var codProyecto = udsPROY.Value;
             var codEtapa = udsETAP.Value;
@@ -288,7 +327,11 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             colTotDispon.RightJustified = true;
 
             grdPresupuestos.CollapseLevel = 1;
+ }
+ catch (Exception)
+ {
 
+ }
             this.UIAPIRawForm.Refresh();
         }
 
@@ -301,12 +344,12 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
             var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
-                $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}'";
+                $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' ";
 
             recSet.DoQuery(sqlQry);
             cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
 
-            sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}'";
+            sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'"; 
             recSet.DoQuery(sqlQry);
             cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
         }
