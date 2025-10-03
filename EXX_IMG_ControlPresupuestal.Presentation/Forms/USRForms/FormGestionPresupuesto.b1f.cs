@@ -287,6 +287,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                 {
                     Cells = new List<CellDBS>
                     {
+                        new CellDBS{ Uid = "U_ID_LINEA", Value = rowsRS.FirstOrDefault( r => r.LocalName == "NroLinea").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_CENTRO_COSTO", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CENCOSTO").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_GERENCIA", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_GERENCIA").InnerText ??  string.Empty},
                         new CellDBS{ Uid = "U_COD_PRTPRSP", Value = rowsRS.FirstOrDefault( r => r.LocalName == "U_EXC_CODPARPR").InnerText ??  string.Empty},
@@ -481,23 +482,26 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
             try
             {
-                if (!reclasificacionHecha)
+                if (this.UIAPIRawForm.Mode != SAPbouiCOM.BoFormMode.fm_FIND_MODE)
                 {
-                    Application.SBO_Application.SetStatusErrorMessage("Debe realizar al menos una reclasificación para poder crear");
-                    BubbleEvent = false;
-                    return;
-                }
+                    if (!reclasificacionHecha)
+                    {
+                        Application.SBO_Application.SetStatusErrorMessage("Debe realizar al menos una reclasificación para poder crear");
+                        BubbleEvent = false;
+                        return;
+                    }
 
-                var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
-                if (saldoPorAsignar > 0.00)
-                {
-                    Application.SBO_Application.SetStatusErrorMessage("No se puede crear la reclasificación cuando hay un saldo pendiente por asignar");
-                    BubbleEvent = false;
-                    return;
-                }
+                    var saldoPorAsignar = Convert.ToDouble(udsSPATDP.ValueEx);
+                    if (saldoPorAsignar > 0.00)
+                    {
+                        Application.SBO_Application.SetStatusErrorMessage("No se puede crear la reclasificación cuando hay un saldo pendiente por asignar");
+                        BubbleEvent = false;
+                        return;
+                    }
 
-                QuitarFilasNoSeleccionadas();
-                dbsOGPR.SetValueExt("Status", "C");
+                    QuitarFilasNoSeleccionadas();
+                    dbsOGPR.SetValueExt("Status", "C");
+                }
             }
             catch (Exception ex)
             {
@@ -506,7 +510,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             }
         }
 
-        private void HabilitarControlesPorEstado()
+        public void HabilitarControlesPorEstado()
         {
             var estado = dbsOGPR.GetValueExt("Status");
             var habilitado = estado == "O";
@@ -519,6 +523,8 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             cmbPresupuesto.Item.Enabled = habilitado;
             cmbSeries.Item.Enabled = habilitado;
             mtxPresupuestos.Item.Enabled = habilitado;
+            EditText0.Item.Enabled = false;
+            if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_FIND_MODE) EditText0.Item.Enabled = true;
         }
 
         private void Form_DataAddAfter(ref SAPbouiCOM.BusinessObjectInfo pVal)
@@ -535,7 +541,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
                     $"T0.U_EXC_TOTDIS = T2.U_TOT_DISP from  \"@EXC_PRESGEN1\" T0 " +
                     $"inner join \"@EXD_OGPR\" T1 on T0.\"Code\" = T1.U_COD_PRESUP " +
                     $"inner join \"@EXD_GPR1\" T2 on T2.\"DocEntry\" = T1.\"DocEntry\" " +
-                    $"where T0.U_EXC_GERENCIA = T2.U_GERENCIA and  T0.U_EXC_CODPARPR = T2.U_COD_PRTPRSP " +
+                    $"where T1.U_COD_PRESUP = T0.\"Code\" and T0.U_EXC_GERENCIA = T2.U_GERENCIA and T0.U_EXC_CODPARPR = T2.U_COD_PRTPRSP and T0.U_EXC_TIPO = T2.U_TIPO " +
                     $"and T1.\"DocEntry\" = '{newKey}'";
             }
             recSet.DoQuery(sqlQry);

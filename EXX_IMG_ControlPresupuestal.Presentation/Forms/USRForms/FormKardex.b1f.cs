@@ -99,6 +99,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_13").Specific));
             this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("Item_14").Specific));
             this.grdPresupuestos = ((SAPbouiCOM.Grid)(this.GetItem("Item_15").Specific));
+            this.grdPresupuestos.LinkPressedBefore += new SAPbouiCOM._IGridEvents_LinkPressedBeforeEventHandler(this.grdPresupuestos_LinkPressedBefore);
             this.btnBuscar = ((SAPbouiCOM.Button)(this.GetItem("Item_16").Specific));
             this.btnBuscar.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnBuscar_PressedAfter);
             this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_12").Specific));
@@ -141,41 +142,41 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
 
         }
 
-          private void cmbCentrosDeCosto_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
-          {
-              udsPPRE.Value = null;
-              cmbPartidasPresup.ClearValidValues();
-        
-              var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-              var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
-                  $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' and T1.\"U_EXC_CENCOSTO\"= '{udsCCOS.Value}' order by 1 asc  ";
-        
-              recSet.DoQuery(sqlQry);
-              cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
-          }
-        
-          private void cmbGerencias_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
-          {
-              udsPPRE.Value = null;
-              cmbPartidasPresup.ClearValidValues();
-        
-              dttPresupuestos.Rows.Clear();
-              if (!string.IsNullOrEmpty(udsCPRE.Value))
-              {
-                  var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-                  var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
-                      $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' ";
-        
-                  recSet.DoQuery(sqlQry);
-                  cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
-        
-                  sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'";
-                  recSet.DoQuery(sqlQry);
-                  cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
-              }
-        
-             
-          }
+        private void cmbCentrosDeCosto_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            udsPPRE.Value = null;
+            cmbPartidasPresup.ClearValidValues();
+
+            var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
+                $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' and T1.\"U_EXC_CENCOSTO\"= '{udsCCOS.Value}' order by 1 asc  ";
+
+            recSet.DoQuery(sqlQry);
+            cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
+        }
+
+        private void cmbGerencias_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
+        {
+            udsPPRE.Value = null;
+            cmbPartidasPresup.ClearValidValues();
+
+            dttPresupuestos.Rows.Clear();
+            if (!string.IsNullOrEmpty(udsCPRE.Value))
+            {
+                var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                var sqlQry = $"select distinct U_EXC_CODPARPR,U_EXC_CODPARPR from \"@EXC_PRESGENE\" T0 inner join \"@EXC_PRESGEN1\" T1 " +
+                    $"on T0.\"Code\" = T1.\"Code\" where T0.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}' ";
+
+                recSet.DoQuery(sqlQry);
+                cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
+
+                sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'";
+                recSet.DoQuery(sqlQry);
+                cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
+            }
+
+
+        }
         private void cmbSucursales_ComboSelectAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
             var recSet = (SAPbobsCOM.Recordset)SBOCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
@@ -293,45 +294,47 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         }
         private void CargarKardex()
         {
-         try
- {
-            var codSucursal = udsSUCU.Value == "-1" ? "*" : udsSUCU.Value;
-            var codProyecto = udsPROY.Value;
-            var codEtapa = udsETAP.Value;
-            var codSubEtapa = udsSETA.Value;
-            var codPartPresu = udsPPRE.Value;
-            var codCentroDeCosto = udsCCOS.Value;
-            var codGerencia = udsGERE.Value;
-            var fechaIni = string.IsNullOrWhiteSpace(udsFINI.ValueEx) ? "19000101" : udsFINI.ValueEx;
-            var fechaFin = string.IsNullOrWhiteSpace(udsFFIN.ValueEx) ? "99991231" : udsFFIN.ValueEx;
+            try
+            {
+                var codSucursal = udsSUCU.Value == "-1" ? "*" : udsSUCU.Value;
+                var codProyecto = udsPROY.Value;
+                var codEtapa = udsETAP.Value;
+                var codSubEtapa = udsSETA.Value;
+                var codPartPresu = udsPPRE.Value;
+                var codCentroDeCosto = udsCCOS.Value;
+                var codGerencia = udsGERE.Value;
+                var fechaIni = string.IsNullOrWhiteSpace(udsFINI.ValueEx) ? "19000101" : udsFINI.ValueEx;
+                var fechaFin = string.IsNullOrWhiteSpace(udsFFIN.ValueEx) ? "99991231" : udsFFIN.ValueEx;
 
-            var sqlQry = $"CALL REPORTE_KARDEX_PRESUPUESTAL('{codSucursal}','{codProyecto}','{codEtapa}','{codSubEtapa}','{codPartPresu}','{codCentroDeCosto}','{codGerencia}','{fechaIni}','{fechaFin}')";
+                var sqlQry = $"CALL REPORTE_KARDEX_PRESUPUESTAL('{codSucursal}','{codProyecto}','{codEtapa}','{codSubEtapa}','{codPartPresu}','{codCentroDeCosto}','{codGerencia}','{fechaIni}','{fechaFin}')";
 
-            dttPresupuestos.ExecuteQuery(sqlQry);
+                dttPresupuestos.ExecuteQuery(sqlQry);
 
-            var colTotComp = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalComprometido");
-            var colTotEjec = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalEjecutado");
-            //var colTotPlanDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificadoDetallado");
-            //var colTotDispDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponibleDetallado");
-            var colTotPlanif = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificado");
-            var colTotDispon = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponible");
+                var colTotComp = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalComprometido");
+                var colTotEjec = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalEjecutado");
+                //var colTotPlanDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificadoDetallado");
+                //var colTotDispDet = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponibleDetallado");
+                var colTotPlanif = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalPlanificado");
+                var colTotDispon = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("TotalDisponible");
+                var colIdDocumento = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("IdDocumento");
 
-            colTotComp.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
-            colTotEjec.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
+                colTotComp.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
+                colTotEjec.ColumnSetting.SumType = SAPbouiCOM.BoColumnSumType.bst_Auto;
+                colIdDocumento.LinkedObjectType = "30";
 
-            colTotComp.RightJustified = true;
-            colTotEjec.RightJustified = true;
-            //colTotPlanDet.RightJustified = true;
-            //colTotDispDet.RightJustified = true;
-            colTotPlanif.RightJustified = true;
-            colTotDispon.RightJustified = true;
+                colTotComp.RightJustified = true;
+                colTotEjec.RightJustified = true;
+                //colTotPlanDet.RightJustified = true;
+                //colTotDispDet.RightJustified = true;
+                colTotPlanif.RightJustified = true;
+                colTotDispon.RightJustified = true;
 
-            grdPresupuestos.CollapseLevel = 1;
- }
- catch (Exception)
- {
+                grdPresupuestos.CollapseLevel = 1;
+            }
+            catch (Exception)
+            {
 
- }
+            }
             this.UIAPIRawForm.Refresh();
         }
 
@@ -349,7 +352,7 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
             recSet.DoQuery(sqlQry);
             cmbPartidasPresup.LoadValidValues(recSet, "*", "Todos");
 
-            sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'"; 
+            sqlQry = $"select distinct T0.\"OcrCode\",T0.\"OcrName\" from OOCR T0 inner join \"@EXC_PRESGEN1\" T1 on T0.\"OcrCode\" = T1.U_EXC_CENCOSTO where T1.\"Code\" = '{udsCPRE.Value}' and T1.\"U_EXC_GERENCIA\"= '{udsGERE.Value}'";
             recSet.DoQuery(sqlQry);
             cmbCentrosDeCosto.LoadValidValues(recSet, "*", "Todos");
         }
@@ -362,6 +365,43 @@ namespace EXX_IMG_ControlPresupuestal.Presentation.Forms.USRForms
         private void btnComprimir_PressedAfter(object sboObject, SAPbouiCOM.SBOItemEventArg pVal)
         {
             grdPresupuestos.Rows.CollapseAll();
+        }
+
+        private void grdPresupuestos_LinkPressedBefore(object sboObject, SAPbouiCOM.SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+
+            var tipoTransaccion = dttPresupuestos.GetValue("Tipo_Transaccion", grdPresupuestos.GetDataTableRowIndex(pVal.Row));
+            var linkedButton = (SAPbouiCOM.EditTextColumn)grdPresupuestos.Columns.Item("IdDocumento");
+            var objType = string.Empty;
+
+            switch (tipoTransaccion)
+            {
+                case "Facturas Proveedor":
+                    objType = "18";
+                    break;
+                case "Asientos":
+                    objType = "30";
+                    break;
+                case "Orden de Compra":
+                    objType = "22";
+                    break;
+                case "Entrega Mercaderia":
+                    objType = "15";
+                    break;
+                case "Entrada Mercaderia":
+                    objType = "20";
+                    break;
+                case "Devolucion Mercaderia":
+                    objType = "21";
+                    break;
+                case "Nota de Credito Proveedor":
+                    objType = "19";
+                    break;
+            }
+
+            linkedButton.LinkedObjectType = objType;
+
         }
     }
 }

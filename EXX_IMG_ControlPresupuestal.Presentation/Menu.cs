@@ -96,15 +96,23 @@ namespace EXX_IMG_ControlPresupuestal.Presentation
                     new FormKardex().Show();
                 }
 
-                if (pVal.MenuUID == "1282")
+                if (!pVal.BeforeAction && pVal.MenuUID == "1281")
                 {
-                    if (!pVal.BeforeAction && Application.SBO_Application.Forms.ActiveForm != null &&
+                    if (Application.SBO_Application.Forms.ActiveForm != null &&
+                        Application.SBO_Application.Forms.ActiveForm.TypeEx == "FormGestionPresupuesto")
+                    {
+                        formGestionPresupuesto.HabilitarControlesPorEstado();
+                    }
+                }
+
+                if (!pVal.BeforeAction && pVal.MenuUID == "1282")
+                {
+                    if (Application.SBO_Application.Forms.ActiveForm != null &&
                         Application.SBO_Application.Forms.ActiveForm.TypeEx == "FormGestionPresupuesto")
                     {
                         formGestionPresupuesto.LoadDataOnAddMode();
                     }
                 }
-
             }
             catch (Exception ex)
             {
